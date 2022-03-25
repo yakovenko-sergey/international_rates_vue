@@ -2,7 +2,7 @@
   <div class="country-rates__wrapper">
     <div :class="countryList?'country-rates__input-container country-rates_open':'country-rates__input-container'">
       <input class="country-rates__input" readonly="readonly" placeholder="Select country" @click = "showCountryList">
-      <div class="country-rates__country-list" v-show="countryList">
+      <div class="country-rates__country-list" ref="countryRates" v-show="countryList">
         <div class="country-rates__item" :countryId="arg['id']"
                v-for="(arg,index) in args"
                :key="args[index]">
@@ -34,29 +34,50 @@
     data(){
       return{
         args:[],
+        rateData:[],
         countryList:false
       }
     },
     mounted(){
-      this.httpGetData();
+       this.$refs.countryRates.addEventListener('click',(e)=>{
+          let id=e.target.getAttribute("countryId");
+          this.httpGetData('http://www.ringcentral.com/api/index.php?cmd=getInternationalRates&param[internationalRatesRequest][brandId]=1210&param[internationalRatesRequest][countryId]='+id+'&param[internationalRatesRequest][tierId]=3311&typeResponse=json');
+       });
+      this.httpGetData('http://www.ringcentral.com/api/index.php?cmd=getCountries&typeResponse=json&luid=22');
     },
     methods:{
-      httpGetData() {
-        var api='http://www.ringcentral.com/api/index.php?cmd=getCountries&typeResponse=json';
+      httpGetData(api) {
         fetchJsonp(api, {
           method: 'GET',
         }).then(response=> {
               return response.json()
           }).then(json=> {
-             console.log('parsed json >>>', json)
-              this.args=json.result;
+              if(json.result){
+                  this.args=json.result;
+              }
+              else if(json.rates){
+                    this.sortRateData(json.rates)
+              }
         }).catch(ex=>{
               console.log('parsing failed', ex)
         })
        },
+       sortRateData(data){
+           let valueArr='';
+           let countryName=data[0]['key']['name'];
+           let sortValueArr=[];
+
+           (data[0]['value'][0].length===undefined) ? valueArr=data[0]['value']:valueArr=data[0]['value'][0];
+
+
+
+           for(var key in valueArr){
+               console.log(valueArr[key]['type']);
+           }
+       },
       showCountryList(){
         this.countryList=!this.countryList;
-      }
+      },
     }
 
   }

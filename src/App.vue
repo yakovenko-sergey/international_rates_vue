@@ -20,9 +20,16 @@
           <th class="country-rates__table-column">Rate per minute</th>
         </tr>
         </thead>
-        <tbody class="country-rates__table-body"></tbody>
+        <tbody class="country-rates__table-body">
+        <div class="country-rates__preloader" v-if="preloaderShow"></div>
+            <tr v-for="item in rateData" :key="item">
+                <td class="country-rates__table-column">{{item['name']}}</td>
+                <td class="country-rates__table-column">{{item['type']}}</td>
+                <td class="country-rates__table-column">{{item['code']}}</td>
+                <td class="country-rates__table-column">{{item['rate']}}</td>
+            </tr>
+        </tbody>
       </table>
-
     </div>
   </div>
 </template>
@@ -33,15 +40,18 @@
     name: 'App',
     data(){
       return{
-        args:[],
-        rateData:[],
-        countryList:false
+          args:[],
+          rateData:[],
+          countryList:false,
+          preloaderShow:false
       }
     },
     mounted(){
        this.$refs.countryRates.addEventListener('click',(e)=>{
           let id=e.target.getAttribute("countryId");
           this.httpGetData('http://www.ringcentral.com/api/index.php?cmd=getInternationalRates&param[internationalRatesRequest][brandId]=1210&param[internationalRatesRequest][countryId]='+id+'&param[internationalRatesRequest][tierId]=3311&typeResponse=json');
+          this.preloaderShow=true;
+          this.countryList=false;
        });
       this.httpGetData('http://www.ringcentral.com/api/index.php?cmd=getCountries&typeResponse=json&luid=22');
     },
@@ -63,17 +73,30 @@
         })
        },
        sortRateData(data){
-           let valueArr='';
+           let valueArr='',phonePart='';
            let countryName=data[0]['key']['name'];
-           let sortValueArr=[];
+           let sortValueArr={};
 
            (data[0]['value'][0].length===undefined) ? valueArr=data[0]['value']:valueArr=data[0]['value'][0];
-
-
-
            for(var key in valueArr){
-               console.log(valueArr[key]['type']);
+               if (valueArr[key]['phonePart']){
+                   phonePart=valueArr[key]['phonePart'];
+               }
+               if (!sortValueArr[valueArr[key]['type']]){
+                   sortValueArr[valueArr[key]['type']]=valueArr[key]['type'];
+                   sortValueArr[valueArr[key]['type']]={};
+                   sortValueArr[valueArr[key]['type']]['name']='';
+                   sortValueArr[valueArr[key]['type']]['type']=valueArr[key]['type'];
+                   sortValueArr[valueArr[key]['type']]['code']=valueArr[key]['areaCode']+''+phonePart;
+                   sortValueArr[valueArr[key]['type']]['rate']='$'+valueArr[key]['rate'];
+               }
+               else{
+                   sortValueArr[valueArr[key]['type']]['code']+=', '+valueArr[key]['areaCode']+''+phonePart;
+               }
            }
+           sortValueArr[valueArr[0]['type']]['name']=countryName;
+           this.preloaderShow=false;
+           this.rateData=sortValueArr;
        },
       showCountryList(){
         this.countryList=!this.countryList;

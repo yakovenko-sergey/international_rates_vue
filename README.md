@@ -1,5 +1,6 @@
 # international_rates_vue
-Project was developed on Vue.js
+Project was developed on Vue.js; 
+
 Project on VanillaJS here: https://github.com/yakovenko-sergey/international_rates
 ## Project setup
 ```
